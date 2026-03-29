@@ -18,7 +18,7 @@ export async function askAI(prompt: string, systemPrompt: string): Promise<strin
             { role: 'user', content: prompt },
           ],
           max_tokens: 512,
-          temperature: 0.3,
+          temperature: 0.1,
           stream: false,
         }),
         signal: controller.signal,
@@ -37,4 +37,17 @@ export async function askAI(prompt: string, systemPrompt: string): Promise<strin
     clearTimeout(timeout);
     throw error;
   }
+}
+
+export function parseJSON(text: string): Record<string, unknown> {
+  try {
+    // Try to find JSON in the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+  } catch {
+    // JSON parse failed
+  }
+  return { summary: text };
 }

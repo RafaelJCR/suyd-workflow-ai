@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { askAI } from '@/lib/ai';
+import { askAI, parseJSON } from '@/lib/ai';
 
 export async function POST(req: Request) {
   const { text } = await req.json();
@@ -11,21 +11,11 @@ export async function POST(req: Request) {
   try {
     const result = await askAI(
       text,
-      `You are an email classification AI. Analyze the email and respond ONLY with valid JSON in this exact format:
-{
-  "category": "support" | "sales" | "billing" | "spam" | "partnership" | "general",
-  "priority": "high" | "medium" | "low",
-  "sentiment": "positive" | "neutral" | "negative",
-  "summary": "one sentence summary",
-  "suggested_action": "what should be done with this email"
-}
-Respond ONLY with the JSON, no extra text.`
+      `You are an email classifier. ALWAYS respond in English. Respond ONLY with a JSON object, no markdown, no explanation, no backticks. Format:
+{"category":"support","priority":"high","sentiment":"negative","summary":"brief summary in English","suggested_action":"action in English"}`
     );
 
-    const jsonMatch = result.match(/\{[\s\S]*\}/);
-    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { error: 'Could not parse' };
-
-    return NextResponse.json(parsed);
+    return NextResponse.json(parseJSON(result));
   } catch {
     return NextResponse.json({ error: 'Classification failed. Please try again.' }, { status: 200 });
   }
