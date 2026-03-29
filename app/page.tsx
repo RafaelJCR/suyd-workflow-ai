@@ -68,7 +68,7 @@ export default function Home() {
   }
 
   function getBadgeColor(key: string, value: string): string {
-    const v = value.toLowerCase();
+    const v = String(value || "").toLowerCase();
     if (key === "priority" || key === "urgency") {
       if (v === "high" || v === "immediate") return "bg-red-500/20 text-red-400 border-red-500/30";
       if (v === "medium" || v === "short-term") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
@@ -197,7 +197,8 @@ export default function Home() {
             {result && !loading && (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {Object.entries(result).map(([key, value]) => {
-                  const displayKey = key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+                  if (value === null || value === undefined) return null;
+                  const displayKey = key.replace(/_/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
                   const strValue = renderValue(value);
                   const isBadge = ["category", "priority", "sentiment", "qualification", "urgency", "budget_indicator", "document_type"].includes(key);
                   const isScore = key === "score";

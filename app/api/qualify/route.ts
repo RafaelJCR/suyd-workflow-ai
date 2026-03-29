@@ -29,7 +29,7 @@ Respond ONLY with the JSON, no extra text.`
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { error: 'Could not parse' };
 
     return NextResponse.json(parsed);
-  } catch (error) {
-    return NextResponse.json({ error: 'Qualification failed' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Qualification failed. Please try again.' }, { status: 200 });
   }
 }
