@@ -52,8 +52,17 @@ export default function Home() {
         body: JSON.stringify({ text: input }),
       });
 
-      const data = await res.json();
-      setResult(data);
+      const text = await res.text();
+      try {
+        const data = JSON.parse(text);
+        if (data && typeof data === "object") {
+          setResult(data);
+        } else {
+          setResult({ result: String(data) });
+        }
+      } catch {
+        setResult({ result: text });
+      }
     } catch {
       setResult({ error: "Failed to process. Please try again." });
     }
@@ -62,9 +71,14 @@ export default function Home() {
   }
 
   function renderValue(value: unknown): string {
-    if (Array.isArray(value)) return value.join(", ");
-    if (typeof value === "object" && value !== null) return JSON.stringify(value);
-    return String(value);
+    try {
+      if (value === null || value === undefined) return "N/A";
+      if (Array.isArray(value)) return value.map(v => String(v)).join(", ");
+      if (typeof value === "object") return JSON.stringify(value);
+      return String(value);
+    } catch {
+      return "N/A";
+    }
   }
 
   function getBadgeColor(key: string, value: string): string {
@@ -197,39 +211,44 @@ export default function Home() {
             {result && !loading && (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {Object.entries(result).map(([key, value]) => {
-                  if (value === null || value === undefined) return null;
-                  const displayKey = key.replace(/_/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-                  const strValue = renderValue(value);
-                  const isBadge = ["category", "priority", "sentiment", "qualification", "urgency", "budget_indicator", "document_type"].includes(key);
-                  const isScore = key === "score";
+                  try {
+                    if (value === null || value === undefined) return null;
+                    const displayKey = key.replace(/_/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+                    const strValue = renderValue(value);
+                    const isBadge = ["category", "priority", "sentiment", "qualification", "urgency", "budget_indicator", "document_type"].includes(key);
+                    const isScore = key === "score" && typeof value === "number";
+                    const scoreNum = isScore ? Math.min(100, Math.max(0, Number(value))) : 0;
 
-                  return (
-                    <div key={key} className="bg-white/5 border border-white/10 rounded-xl p-3">
-                      <span className="text-gray-400 text-xs uppercase tracking-wide">
-                        {displayKey}
-                      </span>
+                    return (
+                      <div key={key} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <span className="text-gray-400 text-xs uppercase tracking-wide">
+                          {displayKey}
+                        </span>
 
-                      {isScore ? (
-                        <div className="mt-1 flex items-center gap-3">
-                          <div className="flex-1 bg-white/10 rounded-full h-3 overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-orange-500 to-pink-500"
-                              style={{ width: `${Number(value)}%` }}
-                            ></div>
+                        {isScore ? (
+                          <div className="mt-1 flex items-center gap-3">
+                            <div className="flex-1 bg-white/10 rounded-full h-3 overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-pink-500"
+                                style={{ width: `${scoreNum}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-white font-bold text-lg">{scoreNum}</span>
                           </div>
-                          <span className="text-white font-bold text-lg">{String(value)}</span>
-                        </div>
-                      ) : isBadge ? (
-                        <div className="mt-1">
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${getBadgeColor(key, strValue)}`}>
-                            {strValue}
-                          </span>
-                        </div>
-                      ) : (
-                        <p className="text-white text-sm mt-1 leading-relaxed">{strValue}</p>
-                      )}
-                    </div>
-                  );
+                        ) : isBadge ? (
+                          <div className="mt-1">
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${getBadgeColor(key, strValue)}`}>
+                              {strValue}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-white text-sm mt-1 leading-relaxed">{strValue}</p>
+                        )}
+                      </div>
+                    );
+                  } catch {
+                    return null;
+                  }
                 })}
               </div>
             )}
